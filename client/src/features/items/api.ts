@@ -3,7 +3,7 @@ import type { Item, ItemDetail, PaginatedItems } from './types';
 import type { ApiResponse } from '@/types';
 
 export const itemsApi = {
-  async list(collectionId: string, params?: { page?: number; limit?: number; sort?: string; order?: string; search?: string }): Promise<PaginatedItems> {
+  async list(collectionId: string, params?: { page?: number; limit?: number; sort?: string; order?: string; search?: string; filters?: string }): Promise<PaginatedItems> {
     const { data } = await api.get(`/items/collection/${collectionId}`, { params });
     return data;
   },

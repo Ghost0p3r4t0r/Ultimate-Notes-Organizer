@@ -13,8 +13,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
-import { ArrowLeft, Loader2, Folder, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CommandPalette } from '@/features/search/components/CommandPalette';
+import { FilterBuilder } from '@/features/items/components/FilterBuilder';
+import { SortSelect } from '@/features/items/components/SortSelect';
+import { ArrowLeft, Loader2, Folder, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ItemForm } from '../../items/components/ItemForm';
 import { DeleteCollectionDialog } from '../../collections/components/DeleteCollectionDialog';
@@ -25,7 +27,16 @@ export function CollectionDetailPage() {
   const { data: collection, isLoading: colLoading } = useCollection(id!);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const { data: itemsData, isLoading: itemsLoading } = useItems(id!, { page, limit: 20, search: search || undefined });
+  const [sortConfig, setSortConfig] = useState<{ field: string; order: 'asc' | 'desc' }>({ field: '', order: 'desc' });
+  const [filters, setFilters] = useState<any>(null);
+  const { data: itemsData, isLoading: itemsLoading } = useItems(id!, {
+    page,
+    limit: 20,
+    search: search || undefined,
+    sort: sortConfig.field || undefined,
+    order: sortConfig.order,
+    filters: filters ? JSON.stringify(filters) : undefined,
+  });
   const createItem = useCreateItem(id!);
   const deleteItem = useDeleteItem(id!);
 
@@ -117,16 +128,10 @@ export function CollectionDetailPage() {
         <Badge variant="secondary">{collection.itemCount} items</Badge>
         <Badge variant="outline">{collection.fields.length} fields</Badge>
         <div className="flex-1" />
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search items..."
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            className="pl-9 w-48 sm:w-64"
-          />
-        </div>
+        <CommandPalette />
         <ViewSwitcher value={mode} onChange={setMode} />
+        <SortSelect fields={orderedFields} sort={sortConfig} onChange={setSortConfig} />
+        <FilterBuilder fields={orderedFields} filters={filters} onChange={setFilters} />
         {mode === 'table' && (
           <ColumnManager
             fields={orderedFields}

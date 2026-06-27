@@ -6,7 +6,7 @@ export const itemsKeys = {
   detail: (id: string) => ['items', 'detail', id] as const,
 };
 
-export function useItems(collectionId: string, params?: { page?: number; limit?: number; sort?: string; order?: string; search?: string }) {
+export function useItems(collectionId: string, params?: { page?: number; limit?: number; sort?: string; order?: string; search?: string; filters?: string }) {
   return useQuery({
     queryKey: [...itemsKeys.list(collectionId), params],
     queryFn: () => itemsApi.list(collectionId, params),
