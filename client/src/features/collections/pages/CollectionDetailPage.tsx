@@ -16,7 +16,10 @@ import { Separator } from '@/components/ui/separator';
 import { CommandPalette } from '@/features/search/components/CommandPalette';
 import { FilterBuilder } from '@/features/items/components/FilterBuilder';
 import { SortSelect } from '@/features/items/components/SortSelect';
-import { ArrowLeft, Loader2, Folder, Plus, ChevronLeft, ChevronRight, Scale, CheckSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, Folder, Plus, ChevronLeft, ChevronRight, Scale, CheckSquare, Download, Upload as UploadIcon } from 'lucide-react';
+import { ImportDialog } from '@/features/importExport/components/ImportDialog';
+import { ExportDialog } from '@/features/importExport/components/ExportDialog';
+import { importExportApi } from '@/features/importExport/api';
 import { motion } from 'framer-motion';
 import { ItemForm } from '../../items/components/ItemForm';
 import { DeleteCollectionDialog } from '../../collections/components/DeleteCollectionDialog';
@@ -44,6 +47,8 @@ export function CollectionDetailPage() {
   const [editingItem, setEditingItem] = useState<Item | undefined>();
   const [deletingItem, setDeletingItem] = useState<Item | undefined>();
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   const fields = (collection?.fields || []).map((f: any) => ({
     id: f.id, name: f.name, type: f.type, required: f.required,
@@ -159,6 +164,14 @@ export function CollectionDetailPage() {
             </Link>
           </Button>
         )}
+        <Button variant="outline" size="sm" onClick={() => setImportOpen(true)} className="gap-2">
+          <UploadIcon className="h-4 w-4" />
+          Import
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setExportOpen(true)} className="gap-2">
+          <Download className="h-4 w-4" />
+          Export
+        </Button>
         <Button onClick={() => { setEditingItem(undefined); setFormOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" />
           Add Item
@@ -313,6 +326,22 @@ export function CollectionDetailPage() {
         collectionName={deletingItem?.fieldValues?.[fields[0]?.id] || 'this item'}
         onConfirm={handleDeleteItem}
         loading={deleteItem.isPending}
+      />
+
+      <ImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        collectionId={id!}
+        fields={fields}
+        onImport={(file, columnMapping) => importExportApi.importData(id!, file, columnMapping)}
+      />
+
+      <ExportDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        fields={fields}
+        totalItems={collection.itemCount}
+        onExport={(format, fieldIds) => importExportApi.exportData(id!, format, fieldIds)}
       />
     </motion.div>
   );

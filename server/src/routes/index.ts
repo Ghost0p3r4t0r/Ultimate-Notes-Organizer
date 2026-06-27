@@ -7,6 +7,7 @@ import searchRoutes from './search';
 import compareRoutes from './compare';
 import dashboardRoutes from './dashboard';
 import favoriteRoutes from './favorite';
+import importExportRoutes from './importExport';
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use('/search', searchRoutes);
 router.use('/compare', compareRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/favorites', favoriteRoutes);
+router.use('/import-export', importExportRoutes);
 
 export default router;
