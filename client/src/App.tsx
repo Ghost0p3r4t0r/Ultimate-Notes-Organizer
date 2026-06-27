@@ -8,6 +8,8 @@ import { DashboardPage } from '@/pages/Dashboard';
 import { NotFoundPage } from '@/pages/NotFound';
 import { ProtectedRoute } from '@/components/layouts/ProtectedRoute';
 import { ToastProvider, ToastViewport } from '@/components/ui/toast';
+import { CollectionsPage } from '@/features/collections/pages/CollectionsPage';
+import { CollectionDetailPage } from '@/features/collections/pages/CollectionDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,8 +33,8 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route element={<MainLayout />}>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/collections" element={<div>Collections</div>} />
-                <Route path="/collections/:id" element={<div>Collection Detail</div>} />
+                <Route path="/collections" element={<CollectionsPage />} />
+                <Route path="/collections/:id" element={<CollectionDetailPage />} />
                 <Route path="/items/:id" element={<div>Item Detail</div>} />
                 <Route path="/favorites" element={<div>Favorites</div>} />
                 <Route path="/search" element={<div>Search</div>} />
