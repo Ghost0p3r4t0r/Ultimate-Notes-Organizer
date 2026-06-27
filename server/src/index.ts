@@ -4,9 +4,11 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import swaggerUi from 'swagger-ui-express';
 import { config } from './config';
 import routes from './routes';
 import { errorHandler } from './middlewares/errorHandler';
+import { swaggerSpec } from './docs/swagger';
 
 const app = express();
 
@@ -16,6 +18,8 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
 
 app.use('/api', routes);
 
