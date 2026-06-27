@@ -12,6 +12,7 @@ import { CollectionsPage } from '@/features/collections/pages/CollectionsPage';
 import { CollectionDetailPage } from '@/features/collections/pages/CollectionDetailPage';
 import { ItemDetailPage } from '@/features/items/pages/ItemDetailPage';
 import { ComparePage } from '@/features/compare/pages/ComparePage';
+import { FavoritesPage } from '@/features/favorites/pages/FavoritesPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,7 +40,7 @@ function App() {
                 <Route path="/collections/:id" element={<CollectionDetailPage />} />
                 <Route path="/items/:id" element={<ItemDetailPage />} />
                 <Route path="/compare" element={<ComparePage />} />
-                <Route path="/favorites" element={<div>Favorites</div>} />
+                <Route path="/favorites" element={<FavoritesPage />} />
                 <Route path="/search" element={<div>Search</div>} />
                 <Route path="/settings" element={<div>Settings</div>} />
               </Route>
