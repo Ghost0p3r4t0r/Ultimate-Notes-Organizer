@@ -10,6 +10,7 @@ import { ProtectedRoute } from '@/components/layouts/ProtectedRoute';
 import { ToastProvider, ToastViewport } from '@/components/ui/toast';
 import { CollectionsPage } from '@/features/collections/pages/CollectionsPage';
 import { CollectionDetailPage } from '@/features/collections/pages/CollectionDetailPage';
+import { ItemDetailPage } from '@/features/items/pages/ItemDetailPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,7 +36,7 @@ function App() {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/collections" element={<CollectionsPage />} />
                 <Route path="/collections/:id" element={<CollectionDetailPage />} />
-                <Route path="/items/:id" element={<div>Item Detail</div>} />
+                <Route path="/items/:id" element={<ItemDetailPage />} />
                 <Route path="/favorites" element={<div>Favorites</div>} />
                 <Route path="/search" element={<div>Search</div>} />
                 <Route path="/settings" element={<div>Settings</div>} />
