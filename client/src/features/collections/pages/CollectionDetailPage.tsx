@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCollection } from '../../collections/hooks';
-import { useItems, useCreateItem, useUpdateItem, useDeleteItem } from '../../items/hooks';
-import { ItemTable } from '../../items/components/ItemTable';
-import { ItemForm } from '../../items/components/ItemForm';
-import { DeleteCollectionDialog } from '../../collections/components/DeleteCollectionDialog';
+import { useItems, useCreateItem, useDeleteItem } from '../../items/hooks';
+import { ViewSwitcher } from '../../items/components/ViewSwitcher';
+import { ColumnManager } from '../../items/components/ColumnManager';
+import { TableView } from '../../items/components/TableView';
+import { CardView } from '../../items/components/CardView';
+import { GalleryView } from '../../items/components/GalleryView';
+import { ListView } from '../../items/components/ListView';
+import { useViewPreferences } from '../../items/hooks/useViewPreferences';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,10 +16,9 @@ import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Loader2, Folder, Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useUpdateCollection, useDeleteCollection as useDeleteCol } from '../../collections/hooks';
-import { ItemForm as ItemFormDialog } from '../../items/components/ItemForm';
+import { ItemForm } from '../../items/components/ItemForm';
+import { DeleteCollectionDialog } from '../../collections/components/DeleteCollectionDialog';
 import type { Item } from '../../items/types';
-import type { FieldDefinition } from '../../collections/types';
 
 export function CollectionDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,26 +33,24 @@ export function CollectionDetailPage() {
   const [editingItem, setEditingItem] = useState<Item | undefined>();
   const [deletingItem, setDeletingItem] = useState<Item | undefined>();
 
-  const fields = collection?.fields?.map((f: any) => ({
-    id: f.id,
-    name: f.name,
-    type: f.type,
-    required: f.required,
-    placeholder: f.placeholder,
-    defaultValue: f.defaultValue,
-    validation: f.validation,
-    displayOptions: f.displayOptions,
-    order: f.order,
-  })) || [];
+  const fields = (collection?.fields || []).map((f: any) => ({
+    id: f.id, name: f.name, type: f.type, required: f.required,
+    placeholder: f.placeholder, defaultValue: f.defaultValue,
+    validation: f.validation, displayOptions: f.displayOptions, order: f.order,
+  }));
+
+  const { mode, visibleColumns, columnOrder, setMode, toggleColumn, reorderColumns } = useViewPreferences(
+    id!,
+    fields.map((f: any) => f.id)
+  );
+
+  const orderedFields = columnOrder
+    .map((fid) => fields.find((f: any) => f.id === fid))
+    .filter((f): f is NonNullable<typeof f> => f !== undefined);
 
   const handleCreateItem = async (fieldValues: Record<string, any>) => {
     await createItem.mutateAsync({ collectionId: id!, fieldValues });
     setFormOpen(false);
-  };
-
-  const handleEditItem = (item: Item) => {
-    setEditingItem(item);
-    setFormOpen(true);
   };
 
   const handleUpdateItem = async (fieldValues: Record<string, any>) => {
@@ -70,8 +71,7 @@ export function CollectionDetailPage() {
 
   const handleToggleFavorite = async (item: Item) => {
     await deleteItem.mutateAsync(item.id);
-    const updatedValues = { ...item.fieldValues };
-    await createItem.mutateAsync({ collectionId: id!, fieldValues: updatedValues });
+    await createItem.mutateAsync({ collectionId: id!, fieldValues: item.fieldValues });
   };
 
   if (colLoading) {
@@ -96,49 +96,94 @@ export function CollectionDetailPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/collections"><ArrowLeft className="h-5 w-5" /></Link>
-        </Button>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: collection.themeColor || '#3b82f6', color: '#fff' }}>
-            <Folder className="h-5 w-5" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{collection.name}</h1>
-            {collection.description && <p className="text-muted-foreground">{collection.description}</p>}
-          </div>
-        </div>
-        <div className="flex-1" />
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search items..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="pl-9 w-64"
-            />
-          </div>
-          <Button onClick={() => { setEditingItem(undefined); setFormOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Item
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/collections"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ backgroundColor: collection.themeColor || '#3b82f6', color: '#fff' }}>
+              <Folder className="h-5 w-5" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{collection.name}</h1>
+              {collection.description && <p className="text-muted-foreground text-sm">{collection.description}</p>}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <Badge variant="secondary">{collection.itemCount} items</Badge>
         <Badge variant="outline">{collection.fields.length} fields</Badge>
+        <div className="flex-1" />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search items..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="pl-9 w-48 sm:w-64"
+          />
+        </div>
+        <ViewSwitcher value={mode} onChange={setMode} />
+        {mode === 'table' && (
+          <ColumnManager
+            fields={orderedFields}
+            visibleColumns={visibleColumns}
+            columnOrder={columnOrder}
+            onToggleColumn={toggleColumn}
+            onReorder={reorderColumns}
+          />
+        )}
+        <Button onClick={() => { setEditingItem(undefined); setFormOpen(true); }}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add Item
+        </Button>
       </div>
 
-      <ItemTable
-        items={itemsData?.items || []}
-        fields={fields}
-        onEdit={handleEditItem}
-        onDelete={setDeletingItem}
-        onToggleFavorite={handleToggleFavorite}
-      />
+      {itemsLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <>
+          {mode === 'table' && (
+            <TableView
+              items={itemsData?.items || []}
+              fields={orderedFields}
+              visibleColumns={visibleColumns}
+              onEdit={(item) => { setEditingItem(item); setFormOpen(true); }}
+              onDelete={setDeletingItem}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          )}
+          {mode === 'card' && (
+            <CardView
+              items={itemsData?.items || []}
+              fields={orderedFields}
+              onEdit={(item) => { setEditingItem(item); setFormOpen(true); }}
+              onDelete={setDeletingItem}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          )}
+          {mode === 'gallery' && (
+            <GalleryView
+              items={itemsData?.items || []}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          )}
+          {mode === 'list' && (
+            <ListView
+              items={itemsData?.items || []}
+              fields={orderedFields}
+              onEdit={(item) => { setEditingItem(item); setFormOpen(true); }}
+              onDelete={setDeletingItem}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          )}
+        </>
+      )}
 
       {itemsData && itemsData.total > itemsData.limit && (
         <div className="flex items-center justify-center gap-4">
@@ -193,7 +238,7 @@ export function CollectionDetailPage() {
         </CardContent>
       </Card>
 
-      <ItemFormDialog
+      <ItemForm
         open={formOpen}
         onOpenChange={setFormOpen}
         fields={fields}
@@ -205,7 +250,7 @@ export function CollectionDetailPage() {
       <DeleteCollectionDialog
         open={!!deletingItem}
         onOpenChange={() => setDeletingItem(undefined)}
-        collectionName={deletingItem?.fieldValues?.[fields[0]?.name] || 'this item'}
+        collectionName={deletingItem?.fieldValues?.[fields[0]?.id] || 'this item'}
         onConfirm={handleDeleteItem}
         loading={deleteItem.isPending}
       />
