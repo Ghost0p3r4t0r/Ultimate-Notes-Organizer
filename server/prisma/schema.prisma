@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens RefreshToken[]
+  collections   Collection[]
+  favorites     Favorite[]
+  activities    Activity[]
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Collection {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  icon        String?
+  themeColor  String?
+  coverImage  String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  fields CollectionField[]
+  items  Item[]
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CollectionField {
+  id             String     @id @default(uuid())
+  collectionId   String
+  collection     Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  name           String
+  type           String
+  required       Boolean    @default(false)
+  placeholder    String?
+  defaultValue   Json?
+  validation     Json?
+  displayOptions Json?
+  order          Int
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Item {
+  id           String   @id @default(uuid())
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  fieldValues  Json     @default("{}")
+  favorite     Boolean  @default(false)
+  archived     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  media      Media[]
+  notes      Note[]
+  tags       ItemTag[]
+  favorites  Favorite[]
+  activities Activity[]
+  fieldHistory ItemFieldHistory[]
+}
+
+model Media {
+  id           String   @id @default(uuid())
+  itemId       String?
+  item         Item?    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  url          String
+  thumbnailUrl String?
+  filename     String
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  createdAt    DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  content   String
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Tag {
+  id    String  @id @default(uuid())
+  name  String
+  color String?
+
+  items ItemTag[]
+}
+
+model ItemTag {
+  itemId String
+  tagId  String
+  item   Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([itemId, tagId])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  itemId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, itemId])
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  userId    String?
+  itemId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  item      Item?    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+}
+
+model ItemFieldHistory {
+  id        String   @id @default(uuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  fieldId   String
+  oldValue  Json?
+  newValue  Json?
+  createdAt DateTime @default(now())
+}
