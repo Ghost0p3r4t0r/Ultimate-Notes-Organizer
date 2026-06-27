@@ -1,5 +1,11 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+
+if (process.env.NODE_ENV === 'test') {
+  dotenv.config({ path: path.resolve(__dirname, '../../.env.test') });
+} else {
+  dotenv.config();
+}
 
 export const config = {
   port: parseInt(process.env.PORT || '4000', 10),
