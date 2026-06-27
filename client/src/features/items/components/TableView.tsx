@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Pencil, Trash2, Star, Eye, Archive, GripVertical } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -20,6 +21,8 @@ interface TableViewProps {
   onEdit: (item: Item) => void;
   onDelete: (item: Item) => void;
   onToggleFavorite: (item: Item) => void;
+  selectedItems?: Set<string>;
+  onSelectionChange?: (itemId: string, checked: boolean) => void;
 }
 
 function renderValue(value: any, type: string): string {
@@ -34,7 +37,7 @@ function renderValue(value: any, type: string): string {
   return String(value).slice(0, 80);
 }
 
-export function TableView({ items, fields, visibleColumns, onEdit, onDelete, onToggleFavorite }: TableViewProps) {
+export function TableView({ items, fields, visibleColumns, onEdit, onDelete, onToggleFavorite, selectedItems, onSelectionChange }: TableViewProps) {
   if (items.length === 0) {
     return (
       <Card>
@@ -57,6 +60,20 @@ export function TableView({ items, fields, visibleColumns, onEdit, onDelete, onT
             <th className="w-10 px-3 py-3 text-left text-xs font-medium text-muted-foreground">
               <Star className="h-3.5 w-3.5" />
             </th>
+            {onSelectionChange && (
+              <th className="w-10 px-3 py-3 text-left text-xs font-medium text-muted-foreground">
+                <Checkbox
+                  checked={selectedItems && selectedItems.size === items.length && items.length > 0}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      items.forEach((item) => onSelectionChange(item.id, true));
+                    } else {
+                      selectedItems?.forEach((id) => onSelectionChange(id, false));
+                    }
+                  }}
+                />
+              </th>
+            )}
             {displayFields.map((f) => (
               <th key={f.id} className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider whitespace-nowrap">
                 {f.name}
@@ -82,6 +99,14 @@ export function TableView({ items, fields, visibleColumns, onEdit, onDelete, onT
                   <Star className="h-3.5 w-3.5" fill={item.favorite ? 'currentColor' : 'none'} />
                 </button>
               </td>
+              {onSelectionChange && (
+                <td className="px-3 py-3">
+                  <Checkbox
+                    checked={selectedItems?.has(item.id)}
+                    onCheckedChange={(checked) => onSelectionChange(item.id, checked)}
+                  />
+                </td>
+              )}
               {displayFields.map((f) => (
                 <td key={f.id} className="max-w-[220px] truncate px-3 py-3 text-sm">
                   <Link to={`/items/${item.id}`} className="hover:underline block truncate">

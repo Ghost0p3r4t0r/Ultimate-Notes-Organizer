@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { CommandPalette } from '@/features/search/components/CommandPalette';
 import { FilterBuilder } from '@/features/items/components/FilterBuilder';
 import { SortSelect } from '@/features/items/components/SortSelect';
-import { ArrowLeft, Loader2, Folder, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Loader2, Folder, Plus, ChevronLeft, ChevronRight, Scale, CheckSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ItemForm } from '../../items/components/ItemForm';
 import { DeleteCollectionDialog } from '../../collections/components/DeleteCollectionDialog';
@@ -43,6 +43,7 @@ export function CollectionDetailPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | undefined>();
   const [deletingItem, setDeletingItem] = useState<Item | undefined>();
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   const fields = (collection?.fields || []).map((f: any) => ({
     id: f.id, name: f.name, type: f.type, required: f.required,
@@ -141,6 +142,23 @@ export function CollectionDetailPage() {
             onReorder={reorderColumns}
           />
         )}
+        <Button
+          variant={selectedItems.size > 0 ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => { if (selectedItems.size > 0) setSelectedItems(new Set()); else setSelectedItems(new Set(itemsData?.items.map((i: Item) => i.id) || [])); }}
+          className="gap-2"
+        >
+          <CheckSquare className="h-4 w-4" />
+          {selectedItems.size > 0 ? `${selectedItems.size} selected` : 'Select'}
+        </Button>
+        {selectedItems.size >= 2 && (
+          <Button variant="default" size="sm" asChild className="gap-2">
+            <Link to={`/compare?ids=${Array.from(selectedItems).join(',')}`}>
+              <Scale className="h-4 w-4" />
+              Compare ({selectedItems.size})
+            </Link>
+          </Button>
+        )}
         <Button onClick={() => { setEditingItem(undefined); setFormOpen(true); }}>
           <Plus className="mr-2 h-4 w-4" />
           Add Item
@@ -161,6 +179,13 @@ export function CollectionDetailPage() {
               onEdit={(item) => { setEditingItem(item); setFormOpen(true); }}
               onDelete={setDeletingItem}
               onToggleFavorite={handleToggleFavorite}
+              selectedItems={selectedItems}
+              onSelectionChange={(itemId, checked) => {
+                const next = new Set(selectedItems);
+                if (checked) next.add(itemId);
+                else next.delete(itemId);
+                setSelectedItems(next);
+              }}
             />
           )}
           {mode === 'card' && (
@@ -188,6 +213,36 @@ export function CollectionDetailPage() {
             />
           )}
         </>
+      )}
+
+      {selectedItems.size > 0 && (
+        <div className="sticky bottom-0 z-20 -mx-4 -mb-4 mt-4 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+              <button
+                type="button"
+                onClick={() => setSelectedItems(new Set())}
+                className="ml-2 text-xs text-muted-foreground/60 hover:text-foreground underline"
+              >
+                Clear
+              </button>
+            </span>
+            <div className="flex items-center gap-2">
+              {selectedItems.size >= 2 && (
+                <Button size="sm" asChild className="gap-2">
+                  <Link to={`/compare?ids=${Array.from(selectedItems).join(',')}`}>
+                    <Scale className="h-4 w-4" />
+                    Compare ({selectedItems.size})
+                  </Link>
+                </Button>
+              )}
+              <Button size="sm" variant="outline" onClick={() => setSelectedItems(new Set())}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {itemsData && itemsData.total > itemsData.limit && (
