@@ -1,5 +1,4 @@
 import prisma from '../utils/prisma';
-import { collectionRepository } from '../repositories/collection';
 
 interface SearchResult {
   id: string;
@@ -87,7 +86,10 @@ export const searchService = {
     page: number; limit: number; sort?: string; order: 'asc' | 'desc';
     search?: string; filters?: string;
   }) {
-    const collection = await collectionRepository.findById(collectionId, userId);
+    const collection = await prisma.collection.findFirst({
+      where: { id: collectionId, userId },
+      select: { fields: { select: { name: true }, orderBy: { order: 'asc' } } },
+    });
     if (!collection) throw new Error('Collection not found');
 
     const skip = (params.page - 1) * params.limit;

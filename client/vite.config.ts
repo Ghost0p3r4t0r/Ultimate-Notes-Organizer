@@ -18,4 +18,22 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router')) {
+            return 'vendor';
+          }
+          if (id.includes('node_modules/@tanstack/react-query')) {
+            return 'query';
+          }
+          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/recharts') || id.includes('node_modules/react-dropzone')) {
+            return 'ui';
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
 });

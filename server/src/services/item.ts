@@ -33,17 +33,15 @@ export const itemService = {
   async getById(id: string, userId: string) {
     const item = await itemRepository.findById(id);
     if (!item) throw new NotFoundError('Item not found');
-
-    const collection = await collectionRepository.findById(item.collectionId, userId);
-    if (!collection) throw new NotFoundError('Item not found');
+    if (item.collection.userId !== userId) throw new NotFoundError('Item not found');
 
     return {
       id: item.id,
       collectionId: item.collectionId,
       collection: {
-        id: collection.id,
-        name: collection.name,
-        fields: collection.fields.map((f) => ({
+        id: item.collection.id,
+        name: item.collection.name,
+        fields: item.collection.fields.map((f) => ({
           id: f.id,
           name: f.name,
           type: f.type,
@@ -79,9 +77,7 @@ export const itemService = {
   async update(id: string, userId: string, data: { fieldValues?: Record<string, any>; favorite?: boolean; archived?: boolean }) {
     const item = await itemRepository.findById(id);
     if (!item) throw new NotFoundError('Item not found');
-
-    const collection = await collectionRepository.findById(item.collectionId, userId);
-    if (!collection) throw new NotFoundError('Item not found');
+    if (item.collection.userId !== userId) throw new NotFoundError('Item not found');
 
     return itemRepository.update(id, data);
   },
@@ -89,9 +85,7 @@ export const itemService = {
   async delete(id: string, userId: string) {
     const item = await itemRepository.findById(id);
     if (!item) throw new NotFoundError('Item not found');
-
-    const collection = await collectionRepository.findById(item.collectionId, userId);
-    if (!collection) throw new NotFoundError('Item not found');
+    if (item.collection.userId !== userId) throw new NotFoundError('Item not found');
 
     await itemRepository.delete(id);
   },

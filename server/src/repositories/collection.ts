@@ -17,15 +17,22 @@ export const collectionRepository = {
   },
 
   async create(data: { name: string; description?: string; icon?: string; themeColor?: string; coverImage?: string; userId: string }) {
-    return prisma.collection.create({ data });
+    return prisma.collection.create({
+      data,
+      include: { fields: { orderBy: { order: 'asc' } }, _count: { select: { items: true } } },
+    });
   },
 
   async update(id: string, userId: string, data: { name?: string; description?: string; icon?: string; themeColor?: string; coverImage?: string }) {
-    return prisma.collection.updateMany({ where: { id, userId }, data });
+    return prisma.collection.update({
+      where: { id },
+      data,
+      include: { fields: { orderBy: { order: 'asc' } }, _count: { select: { items: true } } },
+    });
   },
 
   async delete(id: string, userId: string) {
-    return prisma.collection.deleteMany({ where: { id, userId } });
+    return prisma.collection.delete({ where: { id } });
   },
 
   async replaceFields(collectionId: string, fields: Array<{ name: string; type: string; required: boolean; placeholder?: string; defaultValue?: any; validation?: any; displayOptions?: any; order: number }>) {

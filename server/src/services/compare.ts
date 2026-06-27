@@ -77,7 +77,7 @@ export const compareService = {
     const items = await prisma.item.findMany({
       where: { id: { in: itemIds }, collection: { userId } },
       include: {
-        collection: true,
+        collection: { include: { fields: { orderBy: { order: 'asc' } } } },
         media: { take: 1 },
       },
     });
@@ -92,11 +92,7 @@ export const compareService = {
       throw new Error('All items must belong to the same collection');
     }
 
-    const collection = await prisma.collection.findUnique({
-      where: { id: collectionId },
-      include: { fields: { orderBy: { order: 'asc' } } },
-    });
-    if (!collection) throw new NotFoundError('Collection not found');
+    const collection = items[0].collection;
 
     const fields: CompareField[] = collection.fields.map((field) => {
       const values = items.map((item) => {

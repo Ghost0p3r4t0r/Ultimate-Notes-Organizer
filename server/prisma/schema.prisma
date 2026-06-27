@@ -45,6 +45,9 @@ model Collection {
   fields CollectionField[]
   items  Item[]
   user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([updatedAt])
 }
 
 model CollectionField {
@@ -61,6 +64,9 @@ model CollectionField {
   order          Int
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
+
+  @@index([collectionId])
+  @@index([collectionId, order])
 }
 
 model Item {
@@ -79,6 +85,11 @@ model Item {
   favorites  Favorite[]
   activities Activity[]
   fieldHistory ItemFieldHistory[]
+
+  @@index([collectionId])
+  @@index([collectionId, createdAt])
+  @@index([collectionId, favorite])
+  @@index([collectionId, archived])
 }
 
 model Media {
@@ -93,6 +104,8 @@ model Media {
   width        Int?
   height       Int?
   createdAt    DateTime @default(now())
+
+  @@index([itemId])
 }
 
 model Note {
@@ -103,6 +116,9 @@ model Note {
   pinned    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([itemId])
+  @@index([itemId, pinned])
 }
 
 model Tag {
@@ -120,6 +136,8 @@ model ItemTag {
   tag    Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([itemId, tagId])
+  @@index([itemId])
+  @@index([tagId])
 }
 
 model Favorite {
@@ -131,6 +149,8 @@ model Favorite {
   createdAt DateTime @default(now())
 
   @@unique([userId, itemId])
+  @@index([userId])
+  @@index([itemId])
 }
 
 model Activity {
@@ -142,6 +162,10 @@ model Activity {
   action    String
   details   Json?
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([itemId])
 }
 
 model ItemFieldHistory {
@@ -152,4 +176,6 @@ model ItemFieldHistory {
   oldValue  Json?
   newValue  Json?
   createdAt DateTime @default(now())
+
+  @@index([itemId])
 }
