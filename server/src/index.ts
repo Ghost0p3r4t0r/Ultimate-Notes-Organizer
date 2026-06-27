@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -21,6 +22,8 @@ app.use('/api', routes);
 app.get('/health', (_req, res) => {
   res.json({ success: true, message: 'Server is running' });
 });
+
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.use(errorHandler);
 

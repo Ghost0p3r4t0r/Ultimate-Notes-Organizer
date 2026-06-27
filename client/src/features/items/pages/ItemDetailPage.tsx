@@ -1,15 +1,54 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useItem } from '../hooks';
+import { useItem, useUpdateItem } from '../../items/hooks';
+import { uploadApi } from '../../upload/api';
+import { ImageUploader } from '../../upload/components/ImageUploader';
+import { ImageGallery } from '../../upload/components/ImageGallery';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Loader2, Calendar, Clock, Star } from 'lucide-react';
+import { ArrowLeft, Loader2, Calendar, Clock, Star, Image as ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+interface MediaItem {
+  id: string;
+  url: string;
+  thumbnailUrl: string | null;
+  filename: string;
+  mimeType: string;
+  size: number;
+  width: number | null;
+  height: number | null;
+  createdAt: string;
+}
 
 export function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: item, isLoading } = useItem(id!);
+  const { data: item, isLoading, refetch } = useItem(id!);
+  const [media, setMedia] = useState<MediaItem[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      uploadApi.listByItem(id).then(setMedia).catch(() => {});
+    }
+  }, [id]);
+
+  const handleUpload = async (files: File[]) => {
+    setUploading(true);
+    try {
+      const uploaded = await uploadApi.uploadFiles(files, id);
+      setMedia((prev) => [...uploaded, ...prev]);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (mediaId: string) => {
+    await uploadApi.delete(mediaId);
+    setMedia((prev) => prev.filter((m) => m.id !== mediaId));
+  };
 
   if (isLoading) {
     return (
@@ -29,7 +68,7 @@ export function ItemDetailPage() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 max-w-4xl">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link to={`/collections/${item.collectionId}`}><ArrowLeft className="h-5 w-5" /></Link>
@@ -37,7 +76,7 @@ export function ItemDetailPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">
-              {item.fieldValues[item.collection.fields[0]?.name] || 'Untitled'}
+              {item.fieldValues[item.collection.fields[0]?.id] || item.fieldValues[item.collection.fields[0]?.name] || 'Untitled'}
             </h1>
             {item.favorite && <Star className="h-5 w-5 fill-yellow-500 text-yellow-500" />}
           </div>
@@ -48,14 +87,19 @@ export function ItemDetailPage() {
       </div>
 
       <div className="flex gap-2">
-        <Badge variant="secondary">
-          <Calendar className="mr-1 h-3 w-3" />
-          {new Date(item.createdAt).toLocaleDateString()}
-        </Badge>
-        <Badge variant="outline">
-          <Clock className="mr-1 h-3 w-3" />
-          Updated {new Date(item.updatedAt).toLocaleDateString()}
-        </Badge>
+        <Badge variant="secondary"><Calendar className="mr-1 h-3 w-3" />{new Date(item.createdAt).toLocaleDateString()}</Badge>
+        <Badge variant="outline"><Clock className="mr-1 h-3 w-3" />Updated {new Date(item.updatedAt).toLocaleDateString()}</Badge>
+        {media.length > 0 && (
+          <Badge variant="outline"><ImageIcon className="mr-1 h-3 w-3" />{media.length} images</Badge>
+        )}
+      </div>
+
+      <Separator />
+
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Images</h2>
+        <ImageUploader onUpload={handleUpload} uploading={uploading} />
+        <ImageGallery items={media} onDelete={handleDelete} />
       </div>
 
       <Separator />
